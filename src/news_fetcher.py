@@ -24,12 +24,20 @@ TURKISH_DOMAINS = [
 ]
 
 
+def _parse_domains(raw: str) -> list[str]:
+    """Split a comma/newline/space-separated domain string into a clean list."""
+    import re
+    parts = re.split(r"[,\n\s]+", raw.strip())
+    return [p.strip().lower() for p in parts if p.strip()]
+
+
 def fetch_headlines(
     keyword: str,
     days_back: int = 7,
     page_size: int = 100,
     turkey_only: bool = False,
     language: str = "en",
+    custom_domains: list[str] | None = None,
 ) -> pd.DataFrame:
     api_key = os.getenv("NEWS_API_KEY")
     if not api_key:
@@ -46,8 +54,11 @@ def fetch_headlines(
         "apiKey": api_key,
     }
 
-    if turkey_only:
-        params["domains"] = ",".join(TURKISH_DOMAINS)
+    domains = list(TURKISH_DOMAINS) if turkey_only else []
+    if custom_domains:
+        domains.extend(d for d in custom_domains if d not in domains)
+    if domains:
+        params["domains"] = ",".join(domains)
 
     response = requests.get(NEWS_API_BASE, params=params, timeout=10)
     response.raise_for_status()

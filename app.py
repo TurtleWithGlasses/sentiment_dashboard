@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 
-from src.news_fetcher import fetch_headlines
+from src.news_fetcher import fetch_headlines, _parse_domains
 from src.sentiment import analyze_dataframe
 from src.visualizations import (
     trend_chart,
@@ -58,6 +58,19 @@ with st.sidebar:
         help="'Turkish' fetches Turkish-language articles. Each article is translated to English via Google Translate before sentiment scoring.",
     )
 
+    st.markdown("**Custom Domains** *(optional)*")
+    custom_domains_raw = st.text_area(
+        "custom_domains_input",
+        placeholder="bbc.com\nreuters.com\nnytimes.com",
+        height=100,
+        label_visibility="collapsed",
+        help=(
+            "Restrict results to specific sites. One domain per line (or comma-separated).\n"
+            "Leave empty to fetch from all available sources.\n"
+            "Added on top of the Turkey list when 'Turkey' region is selected."
+        ),
+    )
+
     days_back = st.slider("Look-back period (days)", min_value=1, max_value=7, value=7)
     max_articles = st.slider("Max articles", min_value=10, max_value=100, value=50, step=10)
 
@@ -82,6 +95,7 @@ if run:
                 page_size=max_articles,
                 turkey_only=(source_region == "Turkey"),
                 language=lang_code,
+                custom_domains=_parse_domains(custom_domains_raw) or None,
             )
         except ValueError as e:
             st.error(str(e))
