@@ -8,19 +8,130 @@ load_dotenv()
 
 NEWS_API_BASE = "https://newsapi.org/v2/everything"
 
-# English-language outlets based in Turkey or covering Turkey closely
+# Turkish news domains — covers all language modes (tr + en).
+# The language filter in fetch_headlines handles which articles are returned.
 TURKISH_DOMAINS = [
+    # ── English-language Turkish outlets ──────────────────────────────────────
     "dailysabah.com",
     "hurriyetdailynews.com",
     "trtworld.com",
-    "aa.com.tr",
-    "bianet.org",
     "ahvalnews.com",
     "turkishminute.com",
     "duvarenglish.com",
     "turkeyagenda.com",
-    "yenisafak.com",
+    "indyturk.com",
+    "voaturkce.com",
+    "yetkinreport.com",
+
+    # ── Major print-origin news sites ─────────────────────────────────────────
+    "sozcu.com.tr",
+    "hurriyet.com.tr",
     "sabah.com.tr",
+    "milliyet.com.tr",
+    "cumhuriyet.com.tr",
+    "yenisafak.com",
+    "aksam.com.tr",
+    "turkiyegazetesi.com.tr",
+    "birgun.net",
+    "evrensel.net",
+    "yeniakit.com.tr",
+    "karar.com",
+    "korkusuz.com.tr",
+    "milligazete.com.tr",
+    "anayurtgazetesi.com",
+    "yenicaggazetesi.com.tr",
+
+    # ── TV channel web portals ─────────────────────────────────────────────────
+    "ntv.com.tr",
+    "haberturk.com",
+    "cnnturk.com",
+    "halktv.com.tr",
+    "szctv.com.tr",
+    "tele1.com.tr",
+    "ekoltv.com.tr",
+    "tgrthaber.com.tr",
+    "ahaber.com.tr",
+    "krttv.com.tr",
+    "haberglobal.com.tr",
+    "nowhaber.com.tr",
+
+    # ── Public broadcasters and news agencies ─────────────────────────────────
+    "trthaber.com",
+    "aa.com.tr",
+    "ankahaber.net",
+    "iha.com.tr",
+    "dha.com.tr",
+
+    # ── Digital-native and independent outlets ─────────────────────────────────
+    "t24.com.tr",
+    "gazeteduvar.com.tr",
+    "medyascope.tv",
+    "diken.com.tr",
+    "odatv.com",
+    "gercekgundem.com",
+    "kisadalga.net",
+    "sol.org.tr",
+    "kronos34.news",
+    "gazetepencere.com",
+    "bianet.org",
+    "artigercek.com",
+    "politikyol.com",
+    "dokuz8haber.com",
+    "serbestiyet.com",
+    "fatihaltayli.com.tr",
+
+    # ── International Turkish-language editions ────────────────────────────────
+    "bbc.com",          # bbc.com/turkce
+    "dw.com",           # dw.com/tr
+    "tr.euronews.com",
+    "tr.sputniknews.com",
+    "qha.com.tr",
+
+    # ── High-traffic news portals and aggregators ──────────────────────────────
+    "ensonhaber.com",
+    "haberler.com",
+    "haber7.com",
+    "internethaber.com",
+    "sondakika.com",
+    "mynet.com",        # mynet.com/haber
+
+    # ── Economy and finance ────────────────────────────────────────────────────
+    "ekonomim.com",
+    "bloomberght.com",
+    "paraanaliz.com",
+    "fortuneturkey.com",
+    "capital.com.tr",
+
+    # ── Sports ────────────────────────────────────────────────────────────────
+    "sporx.com",
+    "fanatik.com.tr",
+    "fotomac.com.tr",
+    "ajansspor.com",
+    "aspor.com.tr",
+    "beinsports.com.tr",
+    "mackolik.com",     # mackolik.com/haberler
+
+    # ── Technology and science ─────────────────────────────────────────────────
+    "donanimhaber.com",
+    "webtekno.com",
+    "shiftdelete.net",
+    "webrazzi.com",
+    "log.com.tr",
+    "evrimagaci.org",
+
+    # ── Media industry ────────────────────────────────────────────────────────
+    "medyatava.com",
+    "medyaradar.com",
+    "medyakoridoru.com",
+
+    # ── Regional / local ──────────────────────────────────────────────────────
+    "yeniasir.com.tr",
+    "egedesonsoz.com",
+    "bursahakimiyet.com.tr",
+    "kocaeligazetesi.com.tr",
+    "guneydoguekspres.com",
+    "pusulagazetesi.com.tr",
+    "gaziantepolay.com",
 ]
 
 
