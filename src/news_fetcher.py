@@ -29,6 +29,7 @@ def fetch_headlines(
     days_back: int = 7,
     page_size: int = 100,
     turkey_only: bool = False,
+    language: str = "en",
 ) -> pd.DataFrame:
     api_key = os.getenv("NEWS_API_KEY")
     if not api_key:
@@ -40,7 +41,7 @@ def fetch_headlines(
         "q": keyword,
         "from": from_date,
         "sortBy": "publishedAt",
-        "language": "en",
+        "language": language,
         "pageSize": page_size,
         "apiKey": api_key,
     }

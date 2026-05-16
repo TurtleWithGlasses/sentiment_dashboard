@@ -23,6 +23,8 @@ if "keyword_used" not in st.session_state:
     st.session_state.keyword_used = ""
 if "region_used" not in st.session_state:
     st.session_state.region_used = "Worldwide"
+if "language_used" not in st.session_state:
+    st.session_state.language_used = "English"
 
 # ── Sidebar ────────────────────────────────────────────────────────────────────
 with st.sidebar:
@@ -46,7 +48,14 @@ with st.sidebar:
         "Source Region",
         options=["Worldwide", "Turkey"],
         horizontal=True,
-        help="'Turkey' limits results to English-language Turkish news outlets.",
+        help="'Turkey' limits results to Turkish news outlets.",
+    )
+
+    article_language = st.radio(
+        "Article Language",
+        options=["English", "Turkish"],
+        horizontal=True,
+        help="'Turkish' fetches Turkish-language articles. Note: sentiment scores are less reliable for Turkish text.",
     )
 
     days_back = st.slider("Look-back period (days)", min_value=1, max_value=7, value=7)
@@ -70,6 +79,7 @@ if run:
                 days_back=days_back,
                 page_size=max_articles,
                 turkey_only=(source_region == "Turkey"),
+                language="tr" if article_language == "Turkish" else "en",
             )
         except ValueError as e:
             st.error(str(e))
@@ -85,6 +95,7 @@ if run:
     st.session_state.df = analyze_dataframe(df_raw)
     st.session_state.keyword_used = keyword
     st.session_state.region_used = source_region
+    st.session_state.language_used = article_language
 
 # ── Main area ──────────────────────────────────────────────────────────────────
 if st.session_state.df is None:
@@ -113,6 +124,16 @@ if st.session_state.df is None:
 df = st.session_state.df
 keyword = st.session_state.keyword_used
 region = st.session_state.region_used
+language = st.session_state.language_used
+
+# ── Turkish language warning ──────────────────────────────────────────────────
+if language == "Turkish":
+    st.info(
+        "**Sentiment scores are approximate for Turkish articles.** "
+        "VADER is trained on English text. Scores still reflect tone, "
+        "but treat them as indicative rather than precise.",
+        icon="ℹ️",
+    )
 
 # ── KPI metrics ───────────────────────────────────────────────────────────────
 total = len(df)
@@ -150,7 +171,8 @@ st.divider()
 
 # ── Article feed ──────────────────────────────────────────────────────────────
 region_badge = "🇹🇷 Turkey" if region == "Turkey" else "🌍 Worldwide"
-st.subheader(f"Headlines — {keyword!r}  ·  {region_badge}")
+lang_badge = "🇹🇷 Turkish" if language == "Turkish" else "🇬🇧 English"
+st.subheader(f"Headlines — {keyword!r}  ·  {region_badge}  ·  {lang_badge}")
 
 LABEL_COLOR = {
     "Positive": "green",
