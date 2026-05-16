@@ -72,6 +72,8 @@ with st.sidebar:
 
 # ── Fetch & analyze (only when button is clicked) ─────────────────────────────
 if run:
+    lang_code = "tr" if article_language == "Turkish" else "en"
+
     with st.spinner(f"Fetching headlines for **{keyword}**…"):
         try:
             df_raw = fetch_headlines(
@@ -79,7 +81,7 @@ if run:
                 days_back=days_back,
                 page_size=max_articles,
                 turkey_only=(source_region == "Turkey"),
-                language="tr" if article_language == "Turkish" else "en",
+                language=lang_code,
             )
         except ValueError as e:
             st.error(str(e))
@@ -92,7 +94,10 @@ if run:
         st.warning("No articles found. Try a different keyword or increase the look-back period.")
         st.stop()
 
-    st.session_state.df = analyze_dataframe(df_raw)
+    model_note = " (downloading multilingual model on first run — this may take a minute)" if lang_code == "tr" else ""
+    with st.spinner(f"Analyzing sentiment…{model_note}"):
+        st.session_state.df = analyze_dataframe(df_raw, language=lang_code)
+
     st.session_state.keyword_used = keyword
     st.session_state.region_used = source_region
     st.session_state.language_used = article_language
@@ -125,15 +130,6 @@ df = st.session_state.df
 keyword = st.session_state.keyword_used
 region = st.session_state.region_used
 language = st.session_state.language_used
-
-# ── Turkish language warning ──────────────────────────────────────────────────
-if language == "Turkish":
-    st.info(
-        "**Sentiment scores are approximate for Turkish articles.** "
-        "VADER is trained on English text. Scores still reflect tone, "
-        "but treat them as indicative rather than precise.",
-        icon="ℹ️",
-    )
 
 # ── KPI metrics ───────────────────────────────────────────────────────────────
 total = len(df)
