@@ -8,8 +8,28 @@ load_dotenv()
 
 NEWS_API_BASE = "https://newsapi.org/v2/everything"
 
+# English-language outlets based in Turkey or covering Turkey closely
+TURKISH_DOMAINS = [
+    "dailysabah.com",
+    "hurriyetdailynews.com",
+    "trtworld.com",
+    "aa.com.tr",
+    "bianet.org",
+    "ahvalnews.com",
+    "turkishminute.com",
+    "duvarenglish.com",
+    "turkeyagenda.com",
+    "yenisafak.com",
+    "sabah.com.tr",
+]
 
-def fetch_headlines(keyword: str, days_back: int = 7, page_size: int = 100) -> pd.DataFrame:
+
+def fetch_headlines(
+    keyword: str,
+    days_back: int = 7,
+    page_size: int = 100,
+    turkey_only: bool = False,
+) -> pd.DataFrame:
     api_key = os.getenv("NEWS_API_KEY")
     if not api_key:
         raise ValueError("NEWS_API_KEY not set. Copy .env.example to .env and add your key.")
@@ -24,6 +44,9 @@ def fetch_headlines(keyword: str, days_back: int = 7, page_size: int = 100) -> p
         "pageSize": page_size,
         "apiKey": api_key,
     }
+
+    if turkey_only:
+        params["domains"] = ",".join(TURKISH_DOMAINS)
 
     response = requests.get(NEWS_API_BASE, params=params, timeout=10)
     response.raise_for_status()

@@ -21,6 +21,8 @@ if "df" not in st.session_state:
     st.session_state.df = None
 if "keyword_used" not in st.session_state:
     st.session_state.keyword_used = ""
+if "region_used" not in st.session_state:
+    st.session_state.region_used = "Worldwide"
 
 # ── Sidebar ────────────────────────────────────────────────────────────────────
 with st.sidebar:
@@ -40,6 +42,13 @@ with st.sidebar:
             "• **Exclude** — `economy NOT crypto`"
         ),
     )
+    source_region = st.radio(
+        "Source Region",
+        options=["Worldwide", "Turkey"],
+        horizontal=True,
+        help="'Turkey' limits results to English-language Turkish news outlets.",
+    )
+
     days_back = st.slider("Look-back period (days)", min_value=1, max_value=7, value=7)
     max_articles = st.slider("Max articles", min_value=10, max_value=100, value=50, step=10)
 
@@ -56,7 +65,12 @@ with st.sidebar:
 if run:
     with st.spinner(f"Fetching headlines for **{keyword}**…"):
         try:
-            df_raw = fetch_headlines(keyword, days_back=days_back, page_size=max_articles)
+            df_raw = fetch_headlines(
+                keyword,
+                days_back=days_back,
+                page_size=max_articles,
+                turkey_only=(source_region == "Turkey"),
+            )
         except ValueError as e:
             st.error(str(e))
             st.stop()
@@ -70,6 +84,7 @@ if run:
 
     st.session_state.df = analyze_dataframe(df_raw)
     st.session_state.keyword_used = keyword
+    st.session_state.region_used = source_region
 
 # ── Main area ──────────────────────────────────────────────────────────────────
 if st.session_state.df is None:
@@ -97,6 +112,7 @@ if st.session_state.df is None:
 
 df = st.session_state.df
 keyword = st.session_state.keyword_used
+region = st.session_state.region_used
 
 # ── KPI metrics ───────────────────────────────────────────────────────────────
 total = len(df)
@@ -133,7 +149,8 @@ with wc_col:
 st.divider()
 
 # ── Article feed ──────────────────────────────────────────────────────────────
-st.subheader(f"Headlines — {keyword!r}")
+region_badge = "🇹🇷 Turkey" if region == "Turkey" else "🌍 Worldwide"
+st.subheader(f"Headlines — {keyword!r}  ·  {region_badge}")
 
 LABEL_COLOR = {
     "Positive": "green",
