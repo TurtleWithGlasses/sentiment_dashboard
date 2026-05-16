@@ -25,6 +25,14 @@ with st.sidebar:
         "Keyword / Topic",
         value="economy",
         placeholder="e.g. earthquake, Türkiye, AI",
+        help=(
+            "Supports NewsAPI query syntax:\n"
+            "• **Single word** — `economy`\n"
+            "• **Phrase** — `\"world economy\"` (use quotes)\n"
+            "• **AND** — `USA AND China`\n"
+            "• **OR** — `Europe OR economy`\n"
+            "• **Exclude** — `economy NOT crypto`"
+        ),
     )
     days_back = st.slider("Look-back period (days)", min_value=1, max_value=7, value=7)
     max_articles = st.slider("Max articles", min_value=10, max_value=100, value=50, step=10)
@@ -48,6 +56,16 @@ if not run:
         - Per-article sentiment scores (Positive / Neutral / Negative)
         - Sentiment trend over time
         - Word cloud of the most frequent terms
+
+        **Query examples**
+        | Goal | What to type |
+        |---|---|
+        | Single topic | `earthquake` |
+        | Exact phrase | `"world economy"` |
+        | Both words required | `USA AND China` |
+        | Either word | `Europe OR economy` |
+        | Exclude a term | `economy NOT crypto` |
+        | Combined | `"interest rates" AND (Fed OR ECB)` |
         """
     )
     st.stop()
