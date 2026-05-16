@@ -16,6 +16,12 @@ st.set_page_config(
     layout="wide",
 )
 
+# Persist data across reruns so filter interactions don't reset the page
+if "df" not in st.session_state:
+    st.session_state.df = None
+if "keyword_used" not in st.session_state:
+    st.session_state.keyword_used = ""
+
 # ── Sidebar ────────────────────────────────────────────────────────────────────
 with st.sidebar:
     st.title("📰 Sentiment Dashboard")
@@ -46,8 +52,27 @@ with st.sidebar:
         "Built with Streamlit"
     )
 
+# ── Fetch & analyze (only when button is clicked) ─────────────────────────────
+if run:
+    with st.spinner(f"Fetching headlines for **{keyword}**…"):
+        try:
+            df_raw = fetch_headlines(keyword, days_back=days_back, page_size=max_articles)
+        except ValueError as e:
+            st.error(str(e))
+            st.stop()
+        except Exception as e:
+            st.error(f"Could not fetch news: {e}")
+            st.stop()
+
+    if df_raw.empty:
+        st.warning("No articles found. Try a different keyword or increase the look-back period.")
+        st.stop()
+
+    st.session_state.df = analyze_dataframe(df_raw)
+    st.session_state.keyword_used = keyword
+
 # ── Main area ──────────────────────────────────────────────────────────────────
-if not run:
+if st.session_state.df is None:
     st.markdown(
         """
         ## Welcome
@@ -70,22 +95,8 @@ if not run:
     )
     st.stop()
 
-# Fetch & analyze
-with st.spinner(f"Fetching headlines for **{keyword}**…"):
-    try:
-        df_raw = fetch_headlines(keyword, days_back=days_back, page_size=max_articles)
-    except ValueError as e:
-        st.error(str(e))
-        st.stop()
-    except Exception as e:
-        st.error(f"Could not fetch news: {e}")
-        st.stop()
-
-if df_raw.empty:
-    st.warning("No articles found. Try a different keyword or increase the look-back period.")
-    st.stop()
-
-df = analyze_dataframe(df_raw)
+df = st.session_state.df
+keyword = st.session_state.keyword_used
 
 # ── KPI metrics ───────────────────────────────────────────────────────────────
 total = len(df)
