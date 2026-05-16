@@ -1,25 +1,12 @@
 import nltk
 import pandas as pd
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
+from deep_translator import GoogleTranslator
 
 nltk.download("vader_lexicon", quiet=True)
 
 _vader = SentimentIntensityAnalyzer()
-_multilingual_pipe = None
-
-
-def _get_multilingual_pipe():
-    global _multilingual_pipe
-    if _multilingual_pipe is None:
-        from transformers import pipeline
-        _multilingual_pipe = pipeline(
-            "sentiment-analysis",
-            model="cardiffnlp/twitter-xlm-roberta-base-sentiment",
-            truncation=True,
-            max_length=512,
-            top_k=None,
-        )
-    return _multilingual_pipe
+_translator = GoogleTranslator(source="tr", target="en")
 
 
 def _label(compound: float) -> str:
@@ -28,6 +15,14 @@ def _label(compound: float) -> str:
     elif compound <= -0.05:
         return "Negative"
     return "Neutral"
+
+
+def _translate(text: str) -> str:
+    try:
+        # Google Translate accepts up to 5000 chars; truncate to be safe
+        return _translator.translate(text[:4000]) or text
+    except Exception:
+        return text  # fall back to original if translation fails
 
 
 def score_text_en(text: str) -> dict:
@@ -42,25 +37,9 @@ def score_text_en(text: str) -> dict:
     }
 
 
-def score_text_multilingual(text: str) -> dict:
-    pipe = _get_multilingual_pipe()
-    # top_k=None returns all labels; result is a list of {label, score} dicts
-    result = pipe(text)[0]
-    score_map = {item["label"]: item["score"] for item in result}
-
-    positive = score_map.get("Positive", 0.0)
-    negative = score_map.get("Negative", 0.0)
-    neutral = score_map.get("Neutral", 0.0)
-    # compound mirrors VADER's range: positive pull vs negative pull
-    compound = round(positive - negative, 4)
-
-    return {
-        "compound": compound,
-        "positive": positive,
-        "negative": negative,
-        "neutral": neutral,
-        "label": max(score_map, key=score_map.get),
-    }
+def score_text_tr(text: str) -> dict:
+    translated = _translate(text)
+    return score_text_en(translated)
 
 
 def analyze_dataframe(df: pd.DataFrame, language: str = "en") -> pd.DataFrame:
@@ -68,7 +47,7 @@ def analyze_dataframe(df: pd.DataFrame, language: str = "en") -> pd.DataFrame:
         return df
 
     texts = (df["title"] + ". " + df["description"].fillna("")).tolist()
-    scorer = score_text_multilingual if language == "tr" else score_text_en
+    scorer = score_text_tr if language == "tr" else score_text_en
     results = [scorer(t) for t in texts]
 
     return pd.concat([df.reset_index(drop=True), pd.DataFrame(results)], axis=1)

@@ -55,7 +55,7 @@ with st.sidebar:
         "Article Language",
         options=["English", "Turkish"],
         horizontal=True,
-        help="'Turkish' fetches Turkish-language articles. Note: sentiment scores are less reliable for Turkish text.",
+        help="'Turkish' fetches Turkish-language articles. Each article is translated to English via Google Translate before sentiment scoring.",
     )
 
     days_back = st.slider("Look-back period (days)", min_value=1, max_value=7, value=7)
@@ -94,8 +94,8 @@ if run:
         st.warning("No articles found. Try a different keyword or increase the look-back period.")
         st.stop()
 
-    model_note = " (downloading multilingual model on first run — this may take a minute)" if lang_code == "tr" else ""
-    with st.spinner(f"Analyzing sentiment…{model_note}"):
+    translate_note = " (translating to English first…)" if lang_code == "tr" else ""
+    with st.spinner(f"Analyzing sentiment…{translate_note}"):
         st.session_state.df = analyze_dataframe(df_raw, language=lang_code)
 
     st.session_state.keyword_used = keyword
