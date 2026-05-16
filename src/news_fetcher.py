@@ -142,6 +142,18 @@ def _parse_domains(raw: str) -> list[str]:
     return [p.strip().lower() for p in parts if p.strip()]
 
 
+def _get_api_key() -> str | None:
+    """Return the NewsAPI key from environment or Streamlit secrets."""
+    key = os.getenv("NEWS_API_KEY")
+    if not key:
+        try:
+            import streamlit as st
+            key = st.secrets.get("NEWS_API_KEY")
+        except Exception:
+            pass
+    return key
+
+
 def fetch_headlines(
     keyword: str,
     days_back: int = 7,
@@ -150,7 +162,7 @@ def fetch_headlines(
     language: str = "en",
     custom_domains: list[str] | None = None,
 ) -> pd.DataFrame:
-    api_key = os.getenv("NEWS_API_KEY")
+    api_key = _get_api_key()
     if not api_key:
         raise ValueError("NEWS_API_KEY not set. Copy .env.example to .env and add your key.")
 
