@@ -94,8 +94,7 @@ if run:
         st.warning("No articles found. Try a different keyword or increase the look-back period.")
         st.stop()
 
-    translate_note = " (translating to English first…)" if lang_code == "tr" else ""
-    with st.spinner(f"Analyzing sentiment…{translate_note}"):
+    with st.spinner("Analyzing sentiment…"):
         st.session_state.df = analyze_dataframe(df_raw, language=lang_code)
 
     st.session_state.keyword_used = keyword
