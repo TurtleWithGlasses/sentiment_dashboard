@@ -1,0 +1,144 @@
+import streamlit as st
+import pandas as pd
+
+from src.news_fetcher import fetch_headlines
+from src.sentiment import analyze_dataframe
+from src.visualizations import (
+    trend_chart,
+    distribution_chart,
+    source_chart,
+    wordcloud_figure,
+)
+
+st.set_page_config(
+    page_title="Sentiment Dashboard",
+    page_icon="📰",
+    layout="wide",
+)
+
+# ── Sidebar ────────────────────────────────────────────────────────────────────
+with st.sidebar:
+    st.title("📰 Sentiment Dashboard")
+    st.markdown("Monitor news sentiment in real time.")
+
+    keyword = st.text_input(
+        "Keyword / Topic",
+        value="economy",
+        placeholder="e.g. earthquake, Türkiye, AI",
+    )
+    days_back = st.slider("Look-back period (days)", min_value=1, max_value=7, value=7)
+    max_articles = st.slider("Max articles", min_value=10, max_value=100, value=50, step=10)
+
+    run = st.button("Analyze", type="primary", use_container_width=True)
+
+    st.divider()
+    st.caption(
+        "Data: [NewsAPI](https://newsapi.org) · "
+        "Model: VADER (NLTK) · "
+        "Built with Streamlit"
+    )
+
+# ── Main area ──────────────────────────────────────────────────────────────────
+if not run:
+    st.markdown(
+        """
+        ## Welcome
+        Enter a keyword in the sidebar and click **Analyze** to see:
+        - Live headlines from the past week
+        - Per-article sentiment scores (Positive / Neutral / Negative)
+        - Sentiment trend over time
+        - Word cloud of the most frequent terms
+        """
+    )
+    st.stop()
+
+# Fetch & analyze
+with st.spinner(f"Fetching headlines for **{keyword}**…"):
+    try:
+        df_raw = fetch_headlines(keyword, days_back=days_back, page_size=max_articles)
+    except ValueError as e:
+        st.error(str(e))
+        st.stop()
+    except Exception as e:
+        st.error(f"Could not fetch news: {e}")
+        st.stop()
+
+if df_raw.empty:
+    st.warning("No articles found. Try a different keyword or increase the look-back period.")
+    st.stop()
+
+df = analyze_dataframe(df_raw)
+
+# ── KPI metrics ───────────────────────────────────────────────────────────────
+total = len(df)
+avg_score = df["compound"].mean()
+pos_pct = (df["label"] == "Positive").mean() * 100
+neg_pct = (df["label"] == "Negative").mean() * 100
+
+col1, col2, col3, col4 = st.columns(4)
+col1.metric("Articles", total)
+col2.metric("Avg Sentiment", f"{avg_score:+.3f}")
+col3.metric("Positive", f"{pos_pct:.0f}%")
+col4.metric("Negative", f"{neg_pct:.0f}%")
+
+st.divider()
+
+# ── Charts ────────────────────────────────────────────────────────────────────
+chart_col, dist_col = st.columns([3, 1])
+with chart_col:
+    st.plotly_chart(trend_chart(df), use_container_width=True)
+with dist_col:
+    st.plotly_chart(distribution_chart(df), use_container_width=True)
+
+src_col, wc_col = st.columns([1, 2])
+with src_col:
+    st.plotly_chart(source_chart(df), use_container_width=True)
+with wc_col:
+    st.subheader("Word Cloud")
+    try:
+        fig = wordcloud_figure(df, keyword)
+        st.pyplot(fig)
+    except Exception as e:
+        st.info(f"Word cloud unavailable: {e}")
+
+st.divider()
+
+# ── Article feed ──────────────────────────────────────────────────────────────
+st.subheader(f"Headlines — {keyword!r}")
+
+LABEL_COLOR = {
+    "Positive": "green",
+    "Neutral": "gray",
+    "Negative": "red",
+}
+
+sentiment_filter = st.multiselect(
+    "Filter by sentiment",
+    options=["Positive", "Neutral", "Negative"],
+    default=["Positive", "Neutral", "Negative"],
+)
+
+filtered = df[df["label"].isin(sentiment_filter)]
+
+for _, row in filtered.iterrows():
+    color = LABEL_COLOR.get(row["label"], "gray")
+    score_str = f"{row['compound']:+.3f}"
+    date_str = row["published_at"].strftime("%b %d, %H:%M") if pd.notna(row["published_at"]) else "—"
+
+    with st.container():
+        title_col, badge_col = st.columns([8, 1])
+        with title_col:
+            st.markdown(f"**[{row['title']}]({row['url']})**")
+            desc = row.get("description", "")
+            if desc:
+                st.caption(desc[:180] + ("…" if len(desc) > 180 else ""))
+            st.caption(f"🗞 {row['source']} · 🕒 {date_str}")
+        with badge_col:
+            st.markdown(
+                f"<div style='text-align:center;padding:8px;border-radius:8px;"
+                f"background:{'rgba(46,204,113,0.15)' if color=='green' else 'rgba(231,76,60,0.15)' if color=='red' else 'rgba(149,165,166,0.15)'};"
+                f"color:{color};font-weight:bold;font-size:0.85rem'>"
+                f"{row['label']}<br><span style='font-size:1.1rem'>{score_str}</span></div>",
+                unsafe_allow_html=True,
+            )
+        st.divider()
